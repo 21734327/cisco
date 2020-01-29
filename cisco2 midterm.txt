@@ -1,0 +1,279 @@
+******************************************
+*** router 1 setup                     ***
+******************************************
+
+
+config terminal
+
+hostname R1
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+service password-encryption
+
+banner motd #Unauthorized Access is Prohibited!#
+
+int g0/0.40
+encapsulation dot1q 40
+ip addr 172.27.40.1 255.255.255.0
+no shutdown
+int g0/0.60
+encapsulation dot1q 60
+ip addr 172.27.60.1 255.255.255.0
+no shutdown
+int g0/0.95
+encapsulation dot1q 95
+ip addr 172.27.95.1 255.255.255.0
+no shutdown
+int g0/0
+no shutdown
+exit
+
+
+int s0/0/1
+description Connection to R3
+ip address 10.1.2.1 255.255.255.252
+clock rate 128000
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 s0/0/1
+
+
+******************************************
+*** router 3 setup                     ***
+******************************************
+
+
+config terminal
+
+hostname R3
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+service password-encryption
+
+banner motd #Unauthorized Access is Prohibited!#
+
+int s0/0/0
+description Connection to R1
+ip address 10.1.2.2 255.255.255.252
+clock rate 128000
+no shutdown
+
+int lo 0
+description Loopback
+ip address 209.165.200.81 255.255.255.0
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 lo0
+ip route 172.27.40.0 255.255.255.0 s0/0/0
+ip route 172.27.60.0 255.255.255.0 s0/0/0
+ip route 172.27.95.0 255.255.255.0 s0/0/0
+
+
+exit
+
+
+***************************************
+*** Switch 1 setup                  ***
+***************************************
+
+config terminal
+
+hostname S1
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+ip domain-name ccna-sba.com
+username admin privilege 15 secret cisco2
+line vty 0 4
+exec-timeout 30 0
+transport input ssh
+login local
+exit
+crypto key generate rsa modulus 1024
+
+
+service password-encryption
+banner motd #Unauthorized Access is Prohibited!#
+
+ip default-gateway 172.27.95.1
+
+vlan 40
+name Student
+vlan 60
+name Faculty
+vlan 80
+name Safety-Net
+vlan 95
+name Management
+exit
+
+int vlan 95
+ip add 172.27.95.41 255.255.255.0
+no shutdown
+exit
+
+int f0/24
+switchport mode access
+switchport access vlan 40
+no shutdown
+exit
+
+int f0/1
+switchport mode trunk
+switchport trunk native vlan 1
+switchport trunk allowed vlan 40,60,95
+no shutdown
+
+int g0/1
+switchport mode trunk
+switchport trunk native vlan 1
+switchport trunk allowed vlan 40,60,95
+no shutdown
+
+int range f0/2-23
+switchport mode access
+switchport access vlan 80
+shutdown
+
+
+exit
+
+
+
+
+***************************************
+*** Switch 3 setup                  ***
+***************************************
+
+config terminal
+
+hostname S3
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+ip domain-name ccna-sba.com
+username admin privilege 15 secret cisco2
+line vty 0 4
+exec-timeout 30 0
+transport input ssh
+login local
+exit
+crypto key generate rsa modulus 1024
+
+
+service password-encryption
+banner motd #Unauthorized Access is Prohibited!#
+
+ip default-gateway 172.27.95.1
+
+vlan 40
+name Student
+vlan 60
+name Faculty
+vlan 80
+name Safety-Net
+vlan 95
+name Management
+exit
+
+int vlan 95
+ip add 172.27.95.43 255.255.255.0
+no shutdown
+
+int f0/24
+switchport mode access
+switchport access vlan 60
+no shutdown
+
+int f0/1
+switchport mode trunk
+switchport trunk native vlan 1
+switchport trunk allowed vlan 40,60,95
+no shutdown
+
+int range f0/2-23
+switchport mode access
+switchport access vlan 80
+shutdown
+
+int range g0/1-2
+switchport mode access
+switchport access vlan 80
+shutdown
+exit
+
+
+exit
+

@@ -1,0 +1,200 @@
+******************************************
+*** router 1 setup                     ***
+******************************************
+
+
+config terminal
+
+hostname KruegerR1
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+service password-encryption
+
+banner motd #Unauthorized Access is Prohibited!#
+
+int g0/0
+ip addr 192.168.10.1 255.255.255.0
+ip helper-address 10.1.1.2
+no shutdown
+int g0/1
+ip addr 192.168.11.1 255.255.255.0
+ip helper-address 10.1.1.2
+no shutdown
+int s0/0/0
+description Connection to R2
+ip address 10.1.1.1 255.255.255.252
+clock rate 128000
+no shutdown
+exit
+
+router rip
+version 2
+no auto-summary
+passive-interface g0/0
+passive-interface g0/1
+network 192.168.10.0
+network 192.168.11.0
+network 10.1.1.0
+exit
+
+
+
+
+
+******************************************
+*** router 2 setup                     ***
+******************************************
+
+
+config terminal
+
+hostname KruegerR2
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+service password-encryption
+
+banner motd #Unauthorized Access is Prohibited!#
+
+int g0/0
+ip addr 192.168.20.1 255.255.255.0
+ip access-group 100 in
+ip nat inside
+no shutdown
+
+int s0/0/0
+description Connection to R1
+ip address 10.1.1.2 255.255.255.252
+ip access-group 100 in
+clock rate 128000
+no shutdown
+
+int s0/0/1
+description Connection to ISP
+ip address 209.165.200.225 255.255.255.252
+ip access-group 100 in
+ip nat outside
+clock rate 128000
+no shutdown
+exit
+
+
+ip nat inside source static 192.168.20.254 209.165.200.254
+
+
+ip route 0.0.0.0 0.0.0.0 s0/0/1
+
+
+router rip
+version 2
+no auto-summary
+passive-interface g0/0
+network 192.168.20.0
+network 10.1.1.0
+default-information originate
+exit
+
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.11.1 192.168.11.10
+ip dhcp pool LAN1
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 10.10.0.11
+ip dhcp pool LAN2
+network 192.168.11.0 255.255.255.0
+default-router 192.168.11.1
+dns-server 10.10.0.11
+exit
+
+
+access-list 100 permit tcp 192.168.20.254 0.0.0.0 eq 23 any
+access-list 100 deny tcp any eq 23 any
+access-list 100 permit tcp any any
+access-list 100 permit udp any any
+access-list 100 permit icmp any any
+
+
+
+******************************************
+*** router 3 setup                     ***
+******************************************
+
+
+config terminal
+
+hostname KruegerISP
+
+no ip domain-lookup
+
+enable secret class
+
+line con 0
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+exit
+
+line vty 0 4
+password cisco
+exec-timeout 30 0
+login
+logging synchronous
+transport input telnet
+exit
+
+service password-encryption
+
+banner motd #Unauthorized Access is Prohibited!#
+
+
+int s0/0/1
+description Connection to R2
+ip address 209.165.200.226 255.255.255.252
+clock rate 128000
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 s0/0/1
+
+exit
+
+
+
+
+
